@@ -1,16 +1,17 @@
 # ensure stdlib is in load path
 function ensure_stdlib()
+    separator = Sys.iswindows() ? ';' : ':'
     if "JULIA_LOAD_PATH" in keys(ENV)
         _add_path = false
-        comps = split(ENV["JULIA_LOAD_PATH"], ":")
-        for needed in split("@:@v#.#:@stdlib", ":")
+        comps = split(ENV["JULIA_LOAD_PATH"], separator)
+        for needed in split("@:@v#.#:@stdlib", separator)
             if !(needed in comps)
                 push!(comps, needed)
                 _add_path = true
             end
         end
         if _add_path
-            @show ENV["JULIA_LOAD_PATH"] = join(comps, ":")
+            ENV["JULIA_LOAD_PATH"] = join(comps, separator)
         end
     end
     nothing
@@ -100,7 +101,15 @@ function protoc_test(files, check, envs, outdir)
     open(testscript, "w") do os
         if "JULIA_LOAD_PATH" in keys(ENV)
             loadpath = ENV["JULIA_LOAD_PATH"]
-            println("ENV[\"JULIA_LOAD_PATH\"] = \"$loadpath\"")
+            if Sys.iswindows()
+                # escape separator for printing
+                loadpath = replace(loadpath, "\\"=>"\\\\")
+                outdir = replace(outdir, "\\"=>"\\\\")
+                srcdir = replace(srcdir, "\\"=>"\\\\")
+                well_known_proto_srcdir = replace(well_known_proto_srcdir, "\\"=>"\\\\")
+                srcpaths = replace(srcpaths, "\\"=>"\\\\")
+            end
+            println(os, "ENV[\"JULIA_LOAD_PATH\"] = \"$loadpath\"")
         end
         println(os, "using ProtoBuf, Test")
         for (env_name, env_val) in envs
@@ -124,7 +133,11 @@ end
     ensure_stdlib()
     mktempdir() do outdir
         for testcase in PROTOC_TESTCASES
-            @test protoc_test(testcase.files, testcase.check, testcase.envs, outdir) == 0
+            if Sys.iswindows() && !isempty(testcase.envs)
+                @info("skipping protoc tests that need environment variables on windows")
+            else
+                @test protoc_test(testcase.files, testcase.check, testcase.envs, outdir) == 0
+            end
         end
     end
 end

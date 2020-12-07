@@ -13,6 +13,7 @@ protoc_jll = "c7845625-083e-5bbe-8504-b32d602b7110"
 [compat]
 julia = ">= 1.3"
 Compat = "3"
+protoc_jll = "3"
 
 [extras]
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"

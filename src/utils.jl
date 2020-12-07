@@ -63,7 +63,7 @@ function protoc(args=``)
 
     protoc_jll.protoc() do protoc_path
         ENV′ = copy(ENV)
-        ENV′["PATH"] = string(plugin_dir, ":", ENV′["PATH"])
+        ENV′["PATH"] = string(plugin_dir, Sys.iswindows() ? ";" : ":", ENV′["PATH"])
         ENV′["JULIA"] = joinpath(Sys.BINDIR, Base.julia_exename())
         run(setenv(`$protoc_path --plugin=protoc-gen-julia=$plugin $args`, ENV′))
     end
