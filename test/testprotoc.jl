@@ -98,6 +98,10 @@ function protoc_test(files, check, envs, outdir)
     is_ci = "CI" in keys(ENV)
 
     open(testscript, "w") do os
+        if "JULIA_LOAD_PATH" in keys(ENV)
+            loadpath = ENV["JULIA_LOAD_PATH"]
+            println("ENV[\"JULIA_LOAD_PATH\"] = \"$loadpath\"")
+        end
         println(os, "using ProtoBuf, Test")
         for (env_name, env_val) in envs
             println(os, "ENV[\"$env_name\"]=\"$env_val\"")
@@ -109,7 +113,8 @@ function protoc_test(files, check, envs, outdir)
         println(os, "ProtoBuf.protoc(`-I=$srcdir -I=$well_known_proto_srcdir --julia_out=$outdir $srcpaths`)")
         println(os, check)
     end
-    julia = is_ci ? `$(Base.julia_exename())` : `$(Base.julia_exename()) --code-coverage=user --inline=no`
+    julia_fullpath = joinpath(Sys.BINDIR, Base.julia_exename())
+    julia = is_ci ? `$julia_fullpath` : `$julia_fullpath --code-coverage=user --inline=no`
     proc = run(`$julia $testscript`)
     proc.exitcode
 end
